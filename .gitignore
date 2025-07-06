@@ -1,0 +1,25 @@
+#  Terraform working directory
+.terraform/
+.terraform.lock.hcl
+
+#  Terraform state files (sensitive info inside)
+*.tfstate
+*.tfstate.*
+
+#  Sensitive or private data
+*.pem
+*.tfvars
+*.auto.tfvars
+secrets.auto.tfvars
+
+#  Editor/OS backup or temp files
+*.bak
+*.swp
+*.swo
+*.tmp
+.DS_Store
+Thumbs.db
+
+#  Logs or crash files (optional)
+crash.log
+*.log
