@@ -1,4 +1,6 @@
-# Define the IAM policy document that allows S3 access
+###########################################
+# IAM Policy for S3 Access (Backup)
+###########################################
 data "aws_iam_policy_document" "s3_access_policy" {
   statement {
     effect = "Allow"
@@ -9,7 +11,7 @@ data "aws_iam_policy_document" "s3_access_policy" {
       "s3:ListBucket"
     ]
 
-    # Replace with your actual bucket ARN pattern
+    # Give access to the bucket and all its objects
     resources = [
       aws_s3_bucket.backup_bucket.arn,
       "${aws_s3_bucket.backup_bucket.arn}/*"
@@ -17,13 +19,38 @@ data "aws_iam_policy_document" "s3_access_policy" {
   }
 }
 
-# Create the IAM policy with the above permissions
 resource "aws_iam_policy" "s3_access" {
   name   = "EC2S3BackupPolicy"
   policy = data.aws_iam_policy_document.s3_access_policy.json
 }
 
-# Create the IAM role trusted by EC2
+###########################################
+# IAM Policy for CloudWatch Logs
+###########################################
+data "aws_iam_policy_document" "cloudwatch_logs_policy" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams"
+    ]
+
+    resources = ["*"] # Or restrict to specific log group if known
+  }
+}
+
+resource "aws_iam_policy" "cloudwatch_logs" {
+  name   = "EC2CloudWatchLogsPolicy"
+  policy = data.aws_iam_policy_document.cloudwatch_logs_policy.json
+}
+
+###########################################
+# IAM Role for EC2
+###########################################
 data "aws_iam_policy_document" "ec2_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -40,13 +67,22 @@ resource "aws_iam_role" "ec2_s3_backup_role" {
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
-# Attach the S3 access policy to the role
+###########################################
+# Attach Policies to EC2 Role
+###########################################
 resource "aws_iam_role_policy_attachment" "attach_s3_access" {
   role       = aws_iam_role.ec2_s3_backup_role.name
   policy_arn = aws_iam_policy.s3_access.arn
 }
 
-# Create an instance profile to attach the role to EC2 instances
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_logs" {
+  role       = aws_iam_role.ec2_s3_backup_role.name
+  policy_arn = aws_iam_policy.cloudwatch_logs.arn
+}
+
+###########################################
+# Instance Profile for EC2
+###########################################
 resource "aws_iam_instance_profile" "ec2_s3_instance_profile" {
   name = "ec2-s3-instance-profile"
   role = aws_iam_role.ec2_s3_backup_role.name

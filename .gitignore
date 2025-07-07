@@ -11,6 +11,8 @@
 *.tfvars
 *.auto.tfvars
 secrets.auto.tfvars
+my-key.pub
+my-key
 
 #  Editor/OS backup or temp files
 *.bak
